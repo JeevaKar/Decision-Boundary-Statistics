@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error
+from sklearn.neighbors import KNeighborsClassifier
 
 def merge(points):
     points = list(points)
@@ -29,47 +30,50 @@ def frange(start, stop, step):
         current += step
 
 def border(points1, points2, xmax, ymax, xmin=0, ymin=0, step=0.1):
-    borderlist = list()
-    flag = False
-    for x in frange(xmin, xmax, step):
-        category = False
-        for y in frange(ymin, ymax, step):
-            point = [x, y]
-            category1Distance = False
-            category2Distance = False
-            for point1 in points1:
-                if distance(point, point1) < category1Distance or not category1Distance:
-                    category1Distance = distance(point, point1)
-            for point2 in points2:
-                if distance(point, point2) < category2Distance or not category2Distance:
-                    category2Distance = distance(point, point2)
-            if not category:
-                if category1Distance < category2Distance:
-                    category = 1
-                else:
-                    category = 2
-                continue
-            if category == 1:
-                if category1Distance > category2Distance:
-                    borderlist.append(point)
-                    break
-            elif category == 2:
-                if category1Distance < category2Distance:
-                    borderlist.append(point)
-                    break
-        else:
-            if len(borderlist) != 0:
-                last = borderlist[len(borderlist)-1]
-                if last[1] != ymax-1:
-                    borderlist.append([x, ymax-1])
-                    flag = True
-                elif flag:
-                    flag = False
-                    break
-            else:
-                borderlist.append([x,ymax-1])
+    points3 = list()
+    points4 = list()
+    for point in points1:
+        point.append(0)
+        points3.append(point)
+    
+    for point in points2:
+        point.append(1)
+        points3.append(point)
 
-    return borderlist
+    for point in points1:
+        point = point[::-1]
+        point.append(point.pop(0))
+        points4.append(point)
+    
+    for point in points2:
+        point = point[::-1]
+        point.append(point.pop(0))
+        points4.append(point)
+
+    model1 = KNeighborsClassifier(n_neighbors=237)
+    model1.fit([[row[0], row[1]] for row in points3], [row[2] for row in points3])
+
+    model2 = KNeighborsClassifier(n_neighbors=237)
+    model2.fit([[row[0], row[1]] for row in points4], [row[2] for row in points4])
+    
+    boundaryfinal  = list()
+
+    for model in [model1, model2]:
+        ix = xmin
+        boundary = list()
+        while ix < xmax:
+            iy = ymin
+            prev = None
+            while iy < ymax:
+                res = model.predict([[ix, iy]])
+                if res != prev and prev != None:
+                    boundary.append([ix, iy])
+                prev = res
+                iy = iy + step
+            ix = ix + step
+        boundaryfinal.append(boundary)
+    
+    return boundaryfinal[0], boundaryfinal[1]
 
 def longestdistance(points):
     point1 = points[0]
@@ -176,4 +180,4 @@ def regressionDegree(borderx, bordery):
 
         print(f"Degree {i}: BIC = {bic:.2f}")
     
-    return best_degree
+    return best_degree, lowest_bic

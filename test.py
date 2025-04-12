@@ -33,20 +33,40 @@ all_lists = [x, y, z]
 distanceMetric = 1-avgDist(x0, y0, z0, x1, y1, z1)/longestdistance(merge(all_lists))
 combinations = itertools.combinations(all_lists, 2)
 
-borderxy = border(points1=merge([x0,y0]), points2=merge([x1,y1]), xmax=256, ymax=256, xmin=0, ymin=0, step=1)
-borderyz = border(points1=merge([y0,z0]), points2=merge([y1,z1]), xmax=256, ymax=256, xmin=0, ymin=0, step=1)
-borderxz = border(points1=merge([x0,z0]), points2=merge([x1,z1]), xmax=256, ymax=256, xmin=0, ymin=0, step=1)
+borderxy, borderyx = border(points1=merge([x0,y0]), points2=merge([x1,y1]), xmax=256, ymax=256, xmin=0, ymin=0, step=1)
+borderyz, borderzy = border(points1=merge([y0,z0]), points2=merge([y1,z1]), xmax=256, ymax=256, xmin=0, ymin=0, step=1)
+borderxz, borderzx = border(points1=merge([x0,z0]), points2=merge([x1,z1]), xmax=256, ymax=256, xmin=0, ymin=0, step=1)
 
 tempx, tempy = zip(*borderxy)
-BICxy = regressionDegree(tempx, tempy)
+degxy, BICxy = regressionDegree(tempx, tempy)
 
 tempx, tempy = zip(*borderyz)
-BICyz = regressionDegree(tempx, tempy)
+degyz, BICyz = regressionDegree(tempx, tempy)
 
 tempx, tempy = zip(*borderxz)
-BICxz = regressionDegree(tempx, tempy)
+degxz, BICxz = regressionDegree(tempx, tempy)
 
-BICScore = ((BICxy/50)+(BICxy/50)+(BICxz/50))/comb(3,2)
+tempx, tempy = zip(*borderyx)
+degyx, BICyx = regressionDegree(tempx, tempy)
+
+tempx, tempy = zip(*borderzy)
+degzy, BICzy = regressionDegree(tempx, tempy)
+
+tempx, tempy = zip(*borderzx)
+degzx, BICzx = regressionDegree(tempx, tempy)
+
+if degyx < degxy:
+    degxy = degyx
+    BICxy = BICyx
+if degzy < degyz:
+    degyz = degzy
+    BICyz = BICzy
+if degzx < degxz:
+    degxz = degzx
+    BICxz = BICzx
+
+n=10
+BICScore = ((degxy/n)+(degyz/n)+(degxz/n))/3
 
 end_time = datetime.now()
 elapsed_time = end_time - start_time
@@ -54,7 +74,8 @@ elapsed_time = end_time - start_time
 os.system('cls' if os.name == 'nt' else 'clear')
 print(f"Elapsed time: {elapsed_time}")
 print("Distance Metric: "+str(distanceMetric))
-print("Bics: "+str(BICxy)+" "+str(BICyz)+" "+str(BICxz))
+print("Degrees: "+str(degxy)+" "+str(degyz)+" "+str(degxz))
+print("BICs: "+str(BICxy)+" "+str(BICyz)+" "+str(BICxz))
 print("Bic Score: "+str(BICScore))
 
 x, y = zip(*borderxz)
